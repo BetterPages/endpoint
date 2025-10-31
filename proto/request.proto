@@ -11,5 +11,5 @@ message Request {
 
 message Response {
   int32 status = 1;
-  string content = 2;
+  bytes content = 2;
 }

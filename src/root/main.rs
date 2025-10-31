@@ -1,8 +1,15 @@
+mod resolver;
+
 use request::{
     Request, Response,
     request_service_server::{RequestService, RequestServiceServer},
 };
+use std::fs;
 use tonic::{Status, transport::Server};
+
+use resolver::resolve;
+
+const GLOBAL_404: &[u8] = "404.html".as_bytes();
 
 pub mod request {
     tonic::include_proto!("_");
@@ -19,13 +26,17 @@ impl RequestService for RequestGreeter {
     ) -> Result<tonic::Response<Response>, Status> {
         let req = request.into_inner();
 
+        let fs_path = &resolve(&req.host, &req.path);
+        let data = match fs_path {
+            Some(fs_path) => fs::read(fs_path).unwrap(),
+            None => GLOBAL_404.to_vec(),
+        };
+
+        println!("{:?}", fs_path);
+
         let reply = Response {
             status: 200,
-            content: format!(
-                "<html><body>This works. The host is {}, and the path is {}.</body></html>",
-                req.host, req.path
-            )
-            .into(),
+            content: data,
         };
 
         Ok(tonic::Response::new(reply))

@@ -13,6 +13,7 @@ use std::convert::Infallible;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
+use cache::{get_cache_entry, insert_cache_entry};
 use grpc::get;
 
 const BRANDING: &str = "Pages";
@@ -81,7 +82,14 @@ async fn handle_req(
 }
 
 async fn get_page(path: String, host: String) -> (i32, Bytes) {
-    let res = get(path, host).await.unwrap();
+    let res: grpc::request::Response = match get_cache_entry(path.clone(), host.clone()) {
+        Some(cache_entry) => cache_entry,
+        None => {
+            let res = get(path.clone(), host.clone()).await.unwrap();
+            insert_cache_entry(path, host, res.clone());
+            res
+        }
+    };
 
     return (res.status, Bytes::from(res.content));
 }

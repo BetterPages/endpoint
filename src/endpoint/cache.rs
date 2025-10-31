@@ -1,39 +1,50 @@
 use dashmap::DashMap;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::grpc::request::Response;
 
-const TTL: Duration = Duration::from_secs(60);
+const TTL: Duration = Duration::from_secs(10);
 
 static CACHE: LazyLock<DashMap<(String, String), CacheEntry>> = LazyLock::new(|| DashMap::new());
+static CACHE_TTL: LazyLock<Mutex<Vec<(String, String, Instant)>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
 
 struct CacheEntry {
     response: Response,
-    ttl: Instant,
 }
 
 pub fn get_cache_entry(host: String, path: String) -> Option<Response> {
+    println!("get_cache_entry");
+    try_collect_garbage();
+
     let cache_ref = (host, path);
     let cache_res = CACHE.get(&cache_ref);
 
     match cache_res {
-        Some(cache_entry) => {
-            if cache_entry.ttl.elapsed() > TTL {
-                // Clean the cache. It's TTL has elapsed.
-                let _ = CACHE.remove(&cache_ref);
-            }
-            Some(cache_entry.response.clone())
-        }
+        Some(cache_entry) => Some(cache_entry.response.clone()),
         None => None,
     }
 }
 
 pub fn insert_cache_entry(host: String, path: String, response: Response) {
-    let cache_entry = CacheEntry {
-        response,
-        ttl: Instant::now(),
-    };
+    println!("insert_cache_entry");
+    let cache_entry = CacheEntry { response };
 
-    CACHE.insert((host, path), cache_entry);
+    try_collect_garbage();
+
+    CACHE.insert((host.clone(), path.clone()), cache_entry);
+    let mut cache_ttl = CACHE_TTL.lock().unwrap();
+    cache_ttl.push((host, path, Instant::now()));
+}
+
+fn try_collect_garbage() {
+    println!("try_collect_garbage");
+    let mut cache_ttl = CACHE_TTL.lock().unwrap();
+    if let Some(entry) = cache_ttl.first() {
+        if entry.2.elapsed() > TTL {
+            CACHE.remove(&(entry.0.clone(), entry.1.clone()));
+            cache_ttl.remove(0);
+        }
+    }
 }
