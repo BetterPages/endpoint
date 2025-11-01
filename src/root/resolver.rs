@@ -39,4 +39,20 @@ pub fn resolve_domain(host: &str) -> PathBuf {
 }
 
 /// Turn a path into a Path
-pub fn resolve_path(base: &Path, path: &str) -> PathBuf {}
+pub fn resolve_path(base: &Path, path: &str) -> Option<PathBuf> {
+    // TODO: This could probably be done cleaner. How? Thats a good question.
+    let end_path = Path::new(STORAGE_PATH).join(base.join(".".to_string() + path));
+    if end_path.exists() {
+        if end_path.is_dir() {
+            Some(end_path.join("index.html"))
+        } else {
+            Some(end_path)
+        }
+    } else {
+        if path.ends_with(".html") {
+            None
+        } else {
+            resolve_path(base, &(path.to_string() + ".html"))
+        }
+    }
+}

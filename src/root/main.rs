@@ -9,7 +9,8 @@ use tonic::{Status, transport::Server};
 
 use resolver::{resolve_domain, resolve_path};
 
-const GLOBAL_404: &[u8] = "404.html".as_bytes();
+const GLOBAL_404: &[u8] =
+    "I don't know what you were looking for, but you hit the global 404.".as_bytes();
 
 pub mod request {
     tonic::include_proto!("_");
@@ -26,13 +27,14 @@ impl RequestService for RequestGreeter {
     ) -> Result<tonic::Response<Response>, Status> {
         let req = request.into_inner();
 
-        let fs_path = format!("{}{}", resolve_domain(&req.host), resolve_path(&req.path));
+        let domain = resolve_domain(&req.host);
+        let fs_path = resolve_path(&domain, &req.path);
+        println!("{:?}", fs_path);
+        println!("{:?}", domain);
         let data = match fs_path {
-            Some(fs_path) => fs::read(fs_path).unwrap(),
+            Some(ref fs_path) => fs::read(fs_path).unwrap(),
             None => GLOBAL_404.to_vec(),
         };
-
-        println!("{:?}", fs_path);
 
         let reply = Response {
             status: 200,
