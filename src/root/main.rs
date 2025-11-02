@@ -1,3 +1,4 @@
+pub mod config;
 mod resolver;
 
 use request::{
@@ -7,11 +8,8 @@ use request::{
 use std::fs;
 use tonic::{Status, transport::Server};
 
+use config::GLOBAL_404;
 use resolver::{resolve_domain, resolve_path};
-
-// This should probably be cleaned up into using a file instead.
-const GLOBAL_404: &[u8] =
-    "I don't know what you were looking for, but you hit the global 404.".as_bytes();
 
 pub mod request {
     tonic::include_proto!("_");
@@ -35,8 +33,10 @@ impl RequestService for RequestGreeter {
                 if fs_path.starts_with(&domain) {
                     fs::read(fs_path).unwrap()
                 } else {
-                    // This should probably be cleaned up into using a file instead.
-                    b"No, no you don't, I see what you're doing.".to_vec()
+                    // Use the global 404 to mask the attacks surface (Make the attackers think
+                    // they are successful, taking up their time instead of letting them target
+                    // other potential attack surfaces).
+                    GLOBAL_404.to_vec()
                 }
             }
             None => GLOBAL_404.to_vec(),
