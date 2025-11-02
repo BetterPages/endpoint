@@ -1,5 +1,5 @@
 [package]
-name = "pages"
+name = "endpoint"
 version = "0.1.0"
 edition = "2024"
 
@@ -19,12 +19,3 @@ tonic-prost = "0.14.2"
 
 [build-dependencies]
 tonic-prost-build = "0.14.2"
-
-[[bin]]
-name = "endpoint"
-path = "src/endpoint/main.rs"
-
-[[bin]]
-name = "root"
-path = "src/root/main.rs"
-
