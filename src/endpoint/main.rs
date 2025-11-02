@@ -1,5 +1,6 @@
 pub mod cache;
 pub mod compression;
+pub mod config;
 pub mod grpc;
 pub mod types;
 
@@ -18,14 +19,13 @@ use tokio::net::TcpListener;
 
 use cache::{get_cache_entry, insert_cache_entry};
 use compression::{CompressionMethod, compress, get_header_name};
+use config::{BRANDING, PORT};
 use grpc::get;
 use types::*;
 
-const BRANDING: &str = "Pages";
-
 #[tokio::main]
 async fn main() {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], *PORT));
     let listener = TcpListener::bind(addr).await.unwrap();
 
     // We start a loop to continuously accept incoming connections
@@ -102,7 +102,7 @@ async fn handle_req(
         };
 
         res.headers_mut()
-            .insert("Server", HeaderValue::from_static(BRANDING));
+            .insert("Server", HeaderValue::from_static(&BRANDING));
         res.headers_mut()
             .insert("x-frame-options", HeaderValue::from_static("deny"));
         res.headers_mut()

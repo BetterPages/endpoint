@@ -3,6 +3,8 @@ use request::request_service_client::RequestServiceClient;
 use std::sync::{Arc, LazyLock, Mutex};
 use tonic::transport::Channel;
 
+use crate::config::ROOT_IP;
+
 pub mod request {
     tonic::include_proto!("_");
 }
@@ -10,10 +12,8 @@ pub mod request {
 static CLIENT: LazyLock<Arc<Mutex<RequestServiceClient<Channel>>>> =
     LazyLock::new(|| Arc::new(Mutex::new(init())));
 
-const ROOT_IP: &str = "http://[::1]:50051";
-
 fn init() -> RequestServiceClient<Channel> {
-    let client = block_on(RequestServiceClient::connect(ROOT_IP)).unwrap();
+    let client = block_on(RequestServiceClient::connect(ROOT_IP.as_str())).unwrap();
     client
 }
 
