@@ -18,8 +18,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
-        apt-get update -y
-        apt-get install protobuf-compiler -y
+        sudo apt-get update -y
+        sudo apt-get install protobuf-compiler -y
     - name: Build
       run: cargo build --verbose
     - name: Run tests
