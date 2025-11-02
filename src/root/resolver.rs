@@ -49,7 +49,12 @@ pub fn resolve_path(base: &Path, path: &str) -> Option<PathBuf> {
         }
     } else {
         if path.ends_with(".html") {
-            None
+            if base.join("404.html").exists() {
+                // Global 404
+                Some(base.join("404.html"))
+            } else {
+                None
+            }
         } else {
             resolve_path(base, &(path.to_string() + ".html"))
         }
